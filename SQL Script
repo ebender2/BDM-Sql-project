@@ -1,0 +1,185 @@
+drop table Stock; drop table Price; drop table BUYnSELL;
+
+CREATE TABLE Stock 
+(
+ticker varchar(10),
+`exchange` varchar(20)
+);
+Create table Price
+(
+ticker varchar(10),
+`date` date,
+`close` float
+);
+Create Table BUYnSELL
+(
+ticker varchar(10),
+buy_or_sell varchar(10),
+`date` date,
+`timestamp` time,
+`value` int,
+num_of_shares int
+);
+
+/*
+select * from Stock;
+*/
+
+INSERT INTO Stock (ticker,`exchange`)
+VALUES ('AAPL','NASDAQ'),('GOOG','NASDAQ'),('MSFT','NASDAQ'),('IBM','NYSE');
+select * from Stock;
+
+insert into Price(ticker,`date`,`close`)
+VALUES 
+("AAPL",'2019/03/20',	100.00),
+("AAPL",'2019/03/21',	101.50),
+("AAPL",'2019/03/22',	106.50),
+("GOOG",'2019/03/20',	100.00),
+("GOOG",'2019/03/21',	130.00),
+("GOOG",'2019/03/22',	110.00),
+("MSFT",'2019/03/20',	184.50),
+("MSFT",'2019/03/21',	188.50),
+("MSFT",'2019/03/22',	210.00),
+("IBM",	'2019/03/20',	72.00),
+("IBM",	'2019/03/21',	70.00),
+("IBM",	'2019/03/22',	10.00),
+("IBM",	'2018/03/22',	75.00);
+
+insert into BUYnSELL(ticker,buy_or_sell,`date`,`timestamp`,`value`,num_of_shares)
+VALUES 
+("IBM","BUY",'2019/03/20',"11:55:00",273.00,1100),
+(	"IBM",	"BUY",	'2019/03/21'	,	"10:45:00"	,	271.00	,	2400	),
+(	"IBM",	"SELL",	'2019/03/22'	,	"12:09:00"	,	270.50	,	2500	),
+(	"GOOG",	"BUY",	'2019/03/20'	,	"12:22:00"	,	86.00	,	2200	),
+(	"GOOG",	"SELL",	'2019/03/20'	,	"14:00:00"	,	87.00	,	1000	),
+(	"GOOG",	"SELL",	'2019/03/21'	,	"10:22:00"	,	87.50	,	1000	),
+(	"GOOG",	"BUY",	'2019/03/21/'	,	"13:28:00"	,	87.00	,	800	),
+(	"GOOG",	"SELL",	'2019/03/22'	,	"11:45:00"	,	86.00	,	500	),
+(	"AAPL",	"BUY",	'2019/03/20'	,	"10:01:00"	,	99.00	,	1000	),
+(	"AAPL",	"BUY",	'2019/03/20'	,	"11:22:00"	,	99.50	,	1000	),
+(	"AAPL",	"BUY",	'2019/03/21'	,	"14:22:00"	,	100.00	,	1000 	),
+(	"AAPL",	"SELL",	'2019/03/22'	,	"14:42:00"	,	103.00	,	3000	),
+(	"MSFT",	"BUY",	'2019/03/20'	,	"11:45:00"	,	186.00	,	1500	),
+(	"MSFT",	"SELL", '2019/03/21'	,	"10:45:00"	,	188.00	,	1000	),
+(	"MSFT",	"BUY",	'2019/03/22'	,	"12:03:00"	,	187.00	,	5000	);
+
+select * from Price;
+select * from BUYnSELL;
+select * from Stock;
+
+
+/*
+end set up
+begin queries
+*/
+/*Query 1 */
+select Stock.ticker, Price.`close`
+from Stock
+left join Price
+on Stock.ticker = Price.ticker
+where year(Price.`date`) = 2019 ;
+	
+/*Query 2 */
+ 
+select @higherThan := Price.close 
+from Price
+where date = '2019/03/20' and Price.ticker = 'IBM';
+
+select @lowerThan := Price.close 
+from Price
+where date = '2019/03/20' and Price.ticker = 'GOOG';
+/*
+select @higherThan;
+select @lowerThan;
+*/
+select Price.ticker,Price.`date` 
+from Price 
+where Price.close > @higherThan and Price.close < @lowerThan;
+
+/*Query 3 */
+select @maxPrice := max(Price.close)
+from Price
+where Price.date = "2019/03/20"
+;
+select Price.ticker from Price 
+where Price.`close` = @maxPrice
+and Price.`date` = "2019/03/20"
+;
+
+
+/*Query 4 */
+
+select Distinct Stock.Ticker 
+from Price
+inner join Stock on Price.Ticker = Stock.Ticker
+and Stock.`Exchange` = "NYSE" 
+and Price.`date` = "2019/03/20"
+and (Price.`close` < 20	or	Price.`close` > 100);
+
+
+/*Query 5 */
+
+drop table StockOpen; drop table StockClose; drop table NYSE;
+CREATE TABLE stockopen(ticker1 varchar(10),`price1` int(20));
+CREATE TABLE stockclose(ticker2 varchar(10),`price2` int(20));
+CREATE TABLE NYSE(ticker varchar(10));
+
+/*get only NYSE stocks */
+insert into NYSE
+select distinct Stock.Ticker 
+from Price
+inner join Stock on Price.Ticker = Stock.Ticker
+and Stock.`Exchange` = "NYSE" ;
+
+select * from NYSE;
+
+/*start here*/
+drop table minPrice;
+CREATE TABLE minPrice(`ticker` varchar(10),`lowestClose` int(20));
+
+/* temporary table to hold minimum price for each stock*/
+insert into minPrice
+select Price.`ticker`, MIN(Price.`close`) as `lowestClose`
+from price
+group by Price.`ticker`;
+
+/*if the stock ever went below 100 in 2019 /*
+SET SQL_SAFE_UPDATES=0;
+delete from minPrice where minPrice.`lowestClose` < 100;
+select * from minPrice
+
+insert into stockopen
+select Price.`ticker` as ticker1, Price.`close` as price1
+from Price
+where Price.`date` = "2019/03/20"
+;
+select * from stockopen
+
+
+insert into stockclose
+select Price.`ticker` as ticker2, Price.`close` as price2 
+from Price
+where Price.`date` = "2019/03/21"
+;
+
+select * from stockopen;
+select * from stockclose;
+
+create table stockdiff
+(
+ticker1 varchar(10),
+`price1` int(20),
+ticker2 varchar(10),
+`price2` int(20)
+)
+;
+
+
+
+insert into stockdiff
+select * 
+from stockopen
+cross join stockclose;
+
+select ticker1 ,max(price2 - price1) from stockdiff 
+where ticker1 = ticker2
